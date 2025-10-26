@@ -1,0 +1,31 @@
+{
+  "name": "atari-online",
+  "version": "1.0.0",
+  "description": "ATARI ONLINE - Web-based Atari 8-bit emulator platform",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:games": "vite --open /games/games-mame.html",
+    "dev:basic": "vite --open /basic/basic-mame.html",
+    "dev:assembler": "vite --open /assembler/assembler-mame.html",
+    "dev:fastbasic": "vite --open /fastbasic/fastbasic-mame.html",
+    "dev:logo": "vite --open /logo/logoeng-mame.html",
+    "dev:mac65": "vite --open /mac65/mac65-mame.html",
+    "dev:demos": "vite --open /demos/demos-mame.html",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  },
+  "keywords": [
+    "atari",
+    "emulator",
+    "mame",
+    "retro",
+    "gaming"
+  ],
+  "author": "",
+  "license": "GPL-3.0"
+}
+

@@ -1,22 +1,75 @@
-
+<!DOCTYPE html>
 <html>
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Atari Online</title>
+    <title>Atari Online - Games</title>
     <meta property="og:image" content="preview.png">
+    <link rel="stylesheet" type="text/css" href="css/tree-style.css" />
+    <link rel="stylesheet" type="text/css" href="lib/ui.fancytree.min.css" />
+    <script src='lib/jquery.min.js' type='text/javascript'></script>
+    <script src='lib/jquery.fancytree-all-deps.min.js' type="text/javascript"></script>
   </head>
   <body>
 
     <h2 style="text-align: center"><a href="https://eahumada.github.io/AtariOnline/">ATARI ONLINE</a></h2>
+
+    <!-- File Upload Section -->
+    <div style="text-align: center; margin: 20px auto; padding: 20px; background-color: #f0f0f0; max-width: 600px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+      <h3 style="margin-top: 0;">🎮 Upload Game Files</h3>
+      <p style="font-size: 14px; color: #666;">Select a cartridge or disk file from your computer</p>
+      <div style="margin: 15px;">
+        <label for="cartUpload" style="display: block; margin-bottom: 5px; font-weight: bold;">Cartridge (.car, .rom, .bin):</label>
+        <input type="file" id="cartUpload" accept=".car,.rom,.bin" onchange="handleFileSelect()" style="padding: 5px;" />
+      </div>
+      <div style="margin: 15px;">
+        <label for="diskUpload" style="display: block; margin-bottom: 5px; font-weight: bold;">Disk (.atr, .xfd, .atx):</label>
+        <input type="file" id="diskUpload" accept=".atr,.xfd,.atx" onchange="handleFileSelect()" style="padding: 5px;" />
+      </div>
+      <div style="margin: 15px;">
+        <button id="loadButton" onclick="loadEmulatorWithFiles()" style="padding: 12px 30px; font-size: 16px; background-color: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;" disabled>
+          Load Emulator
+        </button>
+      </div>
+      <div id="status" style="margin: 10px; padding: 10px; color: #666; font-weight: bold;"></div>
+    </div>
+
+    <!-- File Tree Section -->
+    <div id="tree-container" style="border: 2px solid red;">
+      <h3>📁 Saved Games Library</h3>
+      <p id="tree-status" style="color: blue; font-weight: bold;">Initializing tree...</p>
+      <div class="tree-instructions">
+        <strong>How to use:</strong>
+        <ul>
+          <li><strong>Double-click</strong> a game file to load it in the emulator</li>
+          <li><strong>Click</strong> a file to see options: save, load, delete</li>
+          <li><strong>Load</strong> button: Upload a file from your computer to the library</li>
+          <li><strong>Save</strong> button: Download a file from the library to your computer</li>
+        </ul>
+      </div>
+      <table id="tree">
+        <colgroup>
+          <col width="*"></col>
+          <col width="200px"></col>
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+      </table>
+    </div>
+    <input class="file-reader" type='file' />
+
     <pre style="text-align: center">Controls: F1 = HELP, F2 = START, F3 = SELECT, F4 = OPTION</pre>
-    <pre style="text-align: center">KEY ARROWS = joystick, LEFT ALT = Fire.</pre> 
+    <pre style="text-align: center">KEY ARROWS = joystick, LEFT ALT = Fire.</pre>
     <canvas id="canvas" style="width: 50%; height: 50%; display: block; margin: 0 auto;"></canvas>
     <div style="text-align: center; margin: 2 auto;">
       <img id="keyboard" src="../img/atari-keyboard.jpeg" style="width: 450; height: 150;"></img>
-      <input type="button" onclick='emulator.toggleMute()' value="Mute"></input>
+      <input type="button" onclick='toggleMuteIfExists()' value="Mute"></input>
     </div>
-    <pre style="text-align: center">Symbols are located as in original keyboard, please see image.</pre> 
-    <pre style="text-align: center">Mappings: LEFT ALT = Inverse, F7 = Break, CTRL+SYMBOLS=Arrows</pre>    
+    <pre style="text-align: center">Symbols are located as in original keyboard, please see image.</pre>
+    <pre style="text-align: center">Mappings: LEFT ALT = Inverse, F7 = Break, CTRL+SYMBOLS=Arrows</pre>
 
     <canvas id="canvas" style="width: 75%; height: 75%; display: block; margin: 0 auto;"></canvas>
     <script type="text/javascript" src="../js/emularity/es6-promise.js"></script>
@@ -24,40 +77,242 @@
     <script type="text/javascript" src="../js/emularity/loader.js"></script>
     <script type="text/javascript" src="../js/atarionline.js"></script>
     <script type="text/javascript">
+      console.log('Loading emulator scripts...');
 
-      // Load all components
-      var cart = get_url_param("cart");
-      var disk = get_url_param("disk");
+      // Global variables for uploaded files
+      var uploadedCartFile = null;
+      var uploadedDiskFile = null;
+      var emulator = null;
 
-      if(!cart) {
-        cart="";
+      // Helper function to toggle mute
+      function toggleMuteIfExists() {
+        if (emulator) {
+          emulator.toggleMute();
+        }
       }
 
-      if(!disk) {
-        disk= "";
+      // Handle file selection to enable/disable button
+      function handleFileSelect() {
+        var cartInput = document.getElementById('cartUpload');
+        var diskInput = document.getElementById('diskUpload');
+        var loadButton = document.getElementById('loadButton');
+        var statusDiv = document.getElementById('status');
+
+        var hasFile = (cartInput.files.length > 0) || (diskInput.files.length > 0);
+        loadButton.disabled = !hasFile;
+
+        if (hasFile) {
+          loadButton.style.backgroundColor = '#4CAF50';
+          loadButton.style.cursor = 'pointer';
+          var fileNames = [];
+          if (cartInput.files.length > 0) {
+            fileNames.push('Cartridge: ' + cartInput.files[0].name);
+          }
+          if (diskInput.files.length > 0) {
+            fileNames.push('Disk: ' + diskInput.files[0].name);
+          }
+          statusDiv.textContent = 'Selected: ' + fileNames.join(', ');
+          statusDiv.style.color = '#333';
+          console.log('Files selected:', fileNames);
+        } else {
+          loadButton.style.backgroundColor = '#cccccc';
+          loadButton.style.cursor = 'not-allowed';
+          statusDiv.textContent = '';
+        }
       }
 
-      if(cart==="" && disk==="") {
-        cart="joust.car";
+      // Function to load emulator with uploaded files
+      function loadEmulatorWithFiles() {
+        console.log('=== loadEmulatorWithFiles() called ===');
+
+        var cartInput = document.getElementById('cartUpload');
+        var diskInput = document.getElementById('diskUpload');
+        var statusDiv = document.getElementById('status');
+
+        uploadedCartFile = cartInput.files[0] || null;
+        uploadedDiskFile = diskInput.files[0] || null;
+
+        console.log('Files from inputs:', {
+          cart: uploadedCartFile ? uploadedCartFile.name : 'none',
+          disk: uploadedDiskFile ? uploadedDiskFile.name : 'none'
+        });
+
+        if (!uploadedCartFile && !uploadedDiskFile) {
+          console.log('No files selected!');
+          statusDiv.textContent = 'Please select at least one file (cartridge or disk).';
+          statusDiv.style.color = 'red';
+          return;
+        }
+
+        statusDiv.textContent = 'Reading files...';
+        statusDiv.style.color = 'blue';
+        console.log('Starting to read files...');
+
+        // Read files and start emulator
+        var promises = [];
+        var fileData = {
+          cartData: null,
+          diskData: null
+        };
+
+        if (uploadedCartFile) {
+          var cartPromise = new Promise(function(resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+              fileData.cartData = new Uint8Array(e.target.result);
+              console.log('Cartridge file loaded:', uploadedCartFile.name, 'Size:', fileData.cartData.length);
+              resolve(fileData.cartData);
+            };
+            reader.onerror = function(e) {
+              console.error('Error reading cartridge file:', e);
+              reject(e);
+            };
+            reader.readAsArrayBuffer(uploadedCartFile);
+          });
+          promises.push(cartPromise);
+        }
+
+        if (uploadedDiskFile) {
+          var diskPromise = new Promise(function(resolve, reject) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+              fileData.diskData = new Uint8Array(e.target.result);
+              console.log('Disk file loaded:', uploadedDiskFile.name, 'Size:', fileData.diskData.length);
+              resolve(fileData.diskData);
+            };
+            reader.onerror = function(e) {
+              console.error('Error reading disk file:', e);
+              reject(e);
+            };
+            reader.readAsArrayBuffer(uploadedDiskFile);
+          });
+          promises.push(diskPromise);
+        }
+
+        Promise.all(promises).then(async function() {
+          statusDiv.textContent = 'Saving to library...';
+          console.log('Starting emulator with files:', {
+            cart: uploadedCartFile ? uploadedCartFile.name : 'none',
+            disk: uploadedDiskFile ? uploadedDiskFile.name : 'none'
+          });
+
+          // Save files to IndexedDB
+          try {
+            if (fileData.cartData && window.saveFileToIndexedDB) {
+              await window.saveFileToIndexedDB(uploadedCartFile.name, fileData.cartData.buffer);
+            }
+            if (fileData.diskData && window.saveFileToIndexedDB) {
+              await window.saveFileToIndexedDB(uploadedDiskFile.name, fileData.diskData.buffer);
+            }
+          } catch (error) {
+            console.warn('Could not save to IndexedDB:', error);
+          }
+
+          // Store file data in sessionStorage for page reload
+          if (fileData.cartData) {
+            sessionStorage.setItem('uploadedCartName', uploadedCartFile.name);
+            sessionStorage.setItem('uploadedCartData', JSON.stringify(Array.from(fileData.cartData)));
+            console.log('Stored cart data in sessionStorage');
+          }
+          if (fileData.diskData) {
+            sessionStorage.setItem('uploadedDiskName', uploadedDiskFile.name);
+            sessionStorage.setItem('uploadedDiskData', JSON.stringify(Array.from(fileData.diskData)));
+            console.log('Stored disk data in sessionStorage');
+          }
+
+          // Reload the page to start fresh emulator with uploaded files
+          statusDiv.textContent = 'Loading emulator...';
+          console.log('Reloading page to start emulator with uploaded files...');
+          window.location.reload();
+        }).catch(function(error) {
+          console.error('Error in loadEmulatorWithFiles:', error);
+          statusDiv.textContent = 'Error reading files: ' + error.message;
+          statusDiv.style.color = 'red';
+        });
       }
-      
-      if(cart!="") {
-        mountCart = JSMESSLoader.mountFile(cart,JSMESSLoader.fetchFile("Cartridge",cart));
-        cartPeripheral = JSMESSLoader.peripheral("cart1", cart);
+
+      // Check for uploaded files in sessionStorage first
+      var uploadedCartName = sessionStorage.getItem('uploadedCartName');
+      var uploadedCartDataStr = sessionStorage.getItem('uploadedCartData');
+      var uploadedDiskName = sessionStorage.getItem('uploadedDiskName');
+      var uploadedDiskDataStr = sessionStorage.getItem('uploadedDiskData');
+
+      var mountCart, cartPeripheral, mountDisk, diskPeripheral;
+      var hasUploadedFiles = false;
+
+      if (uploadedCartDataStr || uploadedDiskDataStr) {
+        console.log('Found uploaded files in sessionStorage');
+        hasUploadedFiles = true;
+
+        // Clear sessionStorage after reading
+        sessionStorage.removeItem('uploadedCartName');
+        sessionStorage.removeItem('uploadedCartData');
+        sessionStorage.removeItem('uploadedDiskName');
+        sessionStorage.removeItem('uploadedDiskData');
+
+        // Load uploaded cartridge
+        if (uploadedCartDataStr) {
+          var cartDataArray = JSON.parse(uploadedCartDataStr);
+          var cartData = new Uint8Array(cartDataArray);
+          console.log('Loading uploaded cartridge:', uploadedCartName, 'Size:', cartData.length);
+          mountCart = JSMESSLoader.mountFile(uploadedCartName, JSMESSLoader.localFile("Cartridge", cartData));
+          cartPeripheral = JSMESSLoader.peripheral("cart1", uploadedCartName);
+        } else {
+          mountCart = undefined;
+          cartPeripheral = undefined;
+        }
+
+        // Load uploaded disk
+        if (uploadedDiskDataStr) {
+          var diskDataArray = JSON.parse(uploadedDiskDataStr);
+          var diskData = new Uint8Array(diskDataArray);
+          var diskFileName = "disk1.atr";
+          console.log('Loading uploaded disk:', uploadedDiskName, 'Size:', diskData.length);
+          mountDisk = JSMESSLoader.mountFile(diskFileName, JSMESSLoader.localFile("Disk", diskData));
+          diskPeripheral = JSMESSLoader.peripheral("flop1", diskFileName);
+        } else {
+          mountDisk = undefined;
+          diskPeripheral = undefined;
+        }
       } else {
-        mountCart=undefined;
-        cartPeripheral=undefined;
-      }
+        // Load all components from URL parameters (legacy support)
+        var cart = get_url_param("cart");
+        var disk = get_url_param("disk");
 
-      if(disk!="") {
-        mountDisk = JSMESSLoader.mountFile("disk1.atr",JSMESSLoader.fetchFile("Disk",disk));
-        diskPeripheral = JSMESSLoader.peripheral("flop1", "disk1.atr");
-      } else {
-        mountDisk=undefined;
-        diskPeripheral=undefined;
+        if(!cart) {
+          cart="";
+        }
+
+        if(!disk) {
+          disk= "";
+        }
+
+        // Only auto-load default game if no URL params
+        if(cart==="" && disk==="") {
+          cart="joust.car";
+        }
+
+        console.log('Auto-load configuration:', { cart: cart, disk: disk });
+
+        if(cart!="") {
+          mountCart = JSMESSLoader.mountFile(cart,JSMESSLoader.fetchFile("Cartridge",cart));
+          cartPeripheral = JSMESSLoader.peripheral("cart1", cart);
+        } else {
+          mountCart=undefined;
+          cartPeripheral=undefined;
+        }
+
+        if(disk!="") {
+          mountDisk = JSMESSLoader.mountFile("disk1.atr",JSMESSLoader.fetchFile("Disk",disk));
+          diskPeripheral = JSMESSLoader.peripheral("flop1", "disk1.atr");
+        } else {
+          mountDisk=undefined;
+          diskPeripheral=undefined;
+        }
       }
+      // Only auto-load if URL parameters are provided
       if (disk!="" && cart!="") {
-        var emulator = new Emulator(document.querySelector("#canvas"),
+        emulator = new Emulator(document.querySelector("#canvas"),
                                   null,
                                   new JSMESSLoader(JSMESSLoader.driver("a800xl"),
                                                    JSMESSLoader.nativeResolution(672, 450),
@@ -74,10 +329,10 @@
                                                    cartPeripheral,
                                                    mountDisk,
                                                    diskPeripheral,
-                                                   JSMESSLoader.extraArgs([""]))
-                                                   )
+                                                   JSMESSLoader.extraArgs([""])));
+        emulator.start({ waitAfterDownloading: true });
       } else if (cart!="") {
-        var emulator = new Emulator(document.querySelector("#canvas"),
+        emulator = new Emulator(document.querySelector("#canvas"),
                                   null,
                                   new JSMESSLoader(JSMESSLoader.driver("a800xl"),
                                                    JSMESSLoader.nativeResolution(672, 450),
@@ -92,11 +347,10 @@
                                                                                                  "../emulators/mame/a800xl.cfg")),
                                                    mountCart,
                                                    cartPeripheral,
-                                                   JSMESSLoader.extraArgs([""]))
-                                                   )
-
+                                                   JSMESSLoader.extraArgs([""])));
+        emulator.start({ waitAfterDownloading: true });
       } else {
-        var emulator = new Emulator(document.querySelector("#canvas"),
+        emulator = new Emulator(document.querySelector("#canvas"),
                                   null,
                                   new JSMESSLoader(JSMESSLoader.driver("a800xl"),
                                                    JSMESSLoader.nativeResolution(672, 450),
@@ -111,13 +365,103 @@
                                                                                                  "../emulators/mame/a800xl.cfg")),
                                                    mountDisk,
                                                    diskPeripheral,
-                                                   JSMESSLoader.extraArgs([""]))
-                                                   )
+                                                   JSMESSLoader.extraArgs([""])));
+        emulator.start({ waitAfterDownloading: true });
       }
-                                                   
-      //  emulator.mute();
 
-      emulator.start({ waitAfterDownloading: true });
+      //  emulator.mute();
+    </script>
+
+    <!-- Tree initialization - must be after jQuery loads -->
+    <script type="module">
+      import { initFilesystem, writeFile } from './js/fs.js';
+      import { treeInit, setFileDoubleClickHandler, readFile, treeShowPath } from './js/fs_tree.js';
+
+      console.log('Tree module loaded');
+
+      // Make writeFile and treeShowPath available globally for the upload function
+      window.saveFileToIndexedDB = async function(filename, data) {
+        try {
+          await writeFile('/' + filename, data);
+          console.log('File saved to IndexedDB:', filename);
+          await treeShowPath('/' + filename);
+        } catch (error) {
+          console.error('Error saving to IndexedDB:', error);
+        }
+      };
+
+      // Wait for jQuery to be ready
+      if (typeof jQuery !== 'undefined') {
+        jQuery(document).ready(async function() {
+          console.log('Document ready, initializing filesystem...');
+          const statusEl = document.getElementById('tree-status');
+
+          try {
+            if (statusEl) statusEl.textContent = 'Initializing filesystem...';
+            await initFilesystem('IndexedDB');
+            console.log('IndexedDB filesystem initialized');
+
+            if (statusEl) statusEl.textContent = 'Initializing tree...';
+            treeInit();
+            console.log('Tree initialized');
+
+            if (statusEl) {
+              statusEl.textContent = 'Tree ready! Upload files or double-click to load.';
+              statusEl.style.color = 'green';
+            }
+
+            // Set handler for double-click on files in tree
+            setFileDoubleClickHandler(async function(path, filename) {
+              console.log('Loading game from tree:', filename, 'path:', path);
+              try {
+                // Read file from IndexedDB
+                const fileData = await readFile(path);
+                const uint8Data = new Uint8Array(fileData);
+
+                console.log('File loaded from IndexedDB:', filename, 'Size:', uint8Data.length);
+
+                // Store in sessionStorage and reload
+                const isCartridge = filename.match(/\.(car|rom|bin)$/i);
+                const isDisk = filename.match(/\.(atr|xfd|atx)$/i);
+
+                if (isCartridge) {
+                  sessionStorage.setItem('uploadedCartName', filename);
+                  sessionStorage.setItem('uploadedCartData', JSON.stringify(Array.from(uint8Data)));
+                  console.log('Stored cartridge data in sessionStorage');
+                } else if (isDisk) {
+                  sessionStorage.setItem('uploadedDiskName', filename);
+                  sessionStorage.setItem('uploadedDiskData', JSON.stringify(Array.from(uint8Data)));
+                  console.log('Stored disk data in sessionStorage');
+                } else {
+                  alert('Unknown file type. Please use .car, .rom, .bin for cartridges or .atr, .xfd, .atx for disks.');
+                  return;
+                }
+
+                // Reload page to start emulator with the file
+                console.log('Reloading page to start emulator...');
+                window.location.reload();
+              } catch (error) {
+                console.error('Error loading file from tree:', error);
+                alert('Error loading file: ' + error.message);
+              }
+            });
+          } catch (error) {
+            console.error('Error initializing filesystem:', error);
+            const statusEl = document.getElementById('tree-status');
+            if (statusEl) {
+              statusEl.textContent = 'Error: ' + error.message + ' (Check console for details)';
+              statusEl.style.color = 'red';
+            }
+          }
+        });
+      } else {
+        console.error('jQuery not loaded!');
+        const statusEl = document.getElementById('tree-status');
+        if (statusEl) {
+          statusEl.textContent = 'Error: jQuery not loaded';
+          statusEl.style.color = 'red';
+        }
+      }
     </script>
   </body>
 </html>

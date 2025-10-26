@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATARI ONLINE</title>
+    <meta property="og:image" content="preview.png">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 10px 0;
+        }
+        a {
+            color: #0066cc;
+            text-decoration: none;
+            padding: 5px 10px;
+            display: inline-block;
+        }
+        a:hover {
+            background-color: #e6f2ff;
+            border-radius: 4px;
+        }
+        .logo {
+            text-align: center;
+            margin: 20px 0;
+        }
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 ATARI ONLINE 🎮</h1>
+    <p style="text-align: center;">Web-based platform for running Atari 8-bit computer emulators and content directly in the browser</p>
+
+    <div class="section">
+        <h2>🎯 Games</h2>
+        <ul>
+            <li><a href="/games/games-mame.html">Play Atari Games (MAME Emulator)</a> - Upload your own game files!</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>💻 Atari BASIC</h2>
+        <ul>
+            <li><a href="/basic/basic-mame.html">Atari Basic Online</a></li>
+            <li><a href="/basic/goblin-mame.html">Goblin Online</a></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🐢 Atari Logo</h2>
+        <ul>
+            <li><a href="/logo/logoeng-mame.html">Logo English</a></li>
+            <li><a href="/logo/logospa-mame.html">Logo Spanish</a></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>📚 Live Tutorials from <a href="http://atariprojects.org/" target="_blank">Atari Projects</a></h2>
+        <p>Fun projects for your Atari 8-bit home computers and video game consoles</p>
+        <ul>
+            <li><a href="/atariprojects/basic-mame.html">Screen Flipping</a> - Type: <code>RUN "D:FLIP.BAS"</code></li>
+            <li><a href="/atariprojects/basic-mame.html">Horizontal Scrolling</a> - Type: <code>RUN "D:HSCROLL.BAS"</code></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>⚙️ Atari Assembler Editor</h2>
+        <p>Based on the great videos from <a href="https://www.youtube.com/watch?v=gOIa6_2_sxw" target="_blank">8-bit and more</a></p>
+        <ul>
+            <li><a href="/assembler/assembler-mame.html">Live Atari Assembler Editor</a></li>
+        </ul>
+        <p><strong>Simple loop example:</strong></p>
+        <pre>ENTER #D:ATASM01.ASM [Return]
+ASM [Return]
+BUG [Return]
+S1000 [Return]
+S [Return]
+(repeat S until you reach the BRK)</pre>
+        
+        <p><strong>Sprite example:</strong></p>
+        <pre>ENTER #D:SPRITE1.LST
+ASM
+BUG
+G500B</pre>
+    </div>
+
+    <div class="section">
+        <h2>🔧 MAC/65 Assembler Editor With DDT</h2>
+        <ul>
+            <li><a href="/mac65/mac65-mame.html">Live MAC/65 with DDT</a></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>⚡ FastBasic</h2>
+        <ul>
+            <li><a href="/fastbasic/fastbasic-mame.html">FastBasic Online</a></li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2>🎪 Demos</h2>
+        <ul>
+            <li><a href="/demos/demos-mame.html">Atari Demos</a></li>
+        </ul>
+    </div>
+
+    <footer style="text-align: center; margin-top: 40px; padding: 20px; color: #666;">
+        <p>ATARI ONLINE - Experience authentic Atari 8-bit computing in your browser</p>
+        <p>No installation required • CORS-free file uploads • Powered by MAME & Emularity</p>
+    </footer>
+</body>
+</html>
+
